@@ -1,0 +1,29 @@
+[
+  {
+    "file": "demo_normal.png",
+    "reference": "demo_reference.png",
+    "label": "Без внесённых изменений",
+    "variant": "SYNTHETIC-PCBA rev.1",
+    "synthetic": true,
+    "description": "Синтетическая иллюстрация собранной платы. Это демонстрационный сценарий, а не фотография или оценка качества на реальных платах.",
+    "sha256": "89dff6b90fbf6cfd005c4561aaeb87df1766059a64ff8b3367dcb776dc323ad0"
+  },
+  {
+    "file": "demo_missing.png",
+    "reference": "demo_reference.png",
+    "label": "Удалён условный компонент",
+    "variant": "SYNTHETIC-PCBA rev.1",
+    "synthetic": true,
+    "description": "Синтетическая иллюстрация собранной платы. Это демонстрационный сценарий, а не фотография или оценка качества на реальных платах.",
+    "sha256": "d924776c8b92af5607100f8dd512e142a0130fafd88967cab2661f875684a886"
+  },
+  {
+    "file": "demo_displaced.png",
+    "reference": "demo_reference.png",
+    "label": "Смещён компонент и повёрнут снимок",
+    "variant": "SYNTHETIC-PCBA rev.1",
+    "synthetic": true,
+    "description": "Синтетическая иллюстрация собранной платы. Это демонстрационный сценарий, а не фотография или оценка качества на реальных платах.",
+    "sha256": "42b027b56565d92c038cf52658a190fa1d86b124622812b00efd7006ff9d2095"
+  }
+]

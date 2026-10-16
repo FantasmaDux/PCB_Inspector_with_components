@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#16734a">
+  <title>PCB Inspector PCBA — плата с компонентами</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <a class="brand" href="/" aria-label="PCB Inspector — главная"><span class="brand-mark">P</span><span>PCB <b>Inspector</b></span></a>
+    <div class="sidebar-caption">РАБОЧЕЕ ПРОСТРАНСТВО</div>
+    <button class="nav-item active" id="inspectionTab"><span aria-hidden="true">▣</span> Проверка платы</button>
+    <button class="nav-item" id="historyTab"><span aria-hidden="true">◷</span> История осмотров <span class="count" id="historyCount">0</span></button>
+    <div class="sidebar-bottom"><div class="connection-dot" id="connectionDot"></div><div><strong id="connectionLabel">Подключение…</strong><small>Локальная обработка</small></div></div>
+  </aside>
+  <main>
+    <header class="page-header"><div><p class="eyebrow">КОНТРОЛЬ СОБРАННОЙ ПЛАТЫ</p><h1 id="pageTitle">Плата с компонентами</h1><p class="subtitle">Исправный эталон и проверяемый снимок одной модели и ревизии.</p></div><div class="version-tag">PCBA MVP <span>v2.0</span></div></header>
+    <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+    <section class="print-summary" id="printSummary" aria-label="Данные печатного отчёта"></section>
+    <section class="metrics" aria-label="Сводка">
+      <div><span>Осмотров сохранено</span><strong id="statInspections">0</strong></div>
+      <div><span>Находок на снимке</span><strong id="statDetections">—</strong></div>
+      <div><span>Подтверждено мастером</span><strong id="statConfirmed">—</strong></div>
+      <div><span>Время анализа</span><strong id="statTime">—</strong></div>
+    </section>
+    <div id="inspectionView">
+      <section class="reference-panel panel">
+        <div class="panel-heading"><div><h2>1. Исправный эталон</h2><p>Та же модель, ревизия и комплектация. Камера сверху, похожий масштаб и свет.</p></div><label class="button secondary small" for="referenceInput">Загрузить эталон</label><input id="referenceInput" type="file" accept="image/jpeg,image/png,image/webp" hidden></div>
+        <div class="reference-body"><img id="referencePreview" alt="Исправная плата-эталон" hidden><div class="reference-empty" id="referenceEmpty">Эталон ещё не выбран</div><div class="reference-fields"><label class="field-label" for="variant">Модель платы и ревизия</label><input id="variant" type="text" placeholder="Например, Controller-A rev.2" maxlength="120"><p id="referenceMeta" class="field-help">Эталон сохранится вместе с осмотром, в том числе в JSON.</p><label class="same-board"><input id="sameBoard" type="checkbox"><span>Я проверил, что модель, ревизия и комплектация совпадают</span></label></div></div>
+      </section>
+      <section class="workspace">
+        <div class="image-panel panel">
+          <div class="panel-heading"><div><h2>2. Проверяемая плата</h2><p id="imageMeta">JPEG, PNG или WebP, до 10 МБ</p></div><label class="button secondary small" for="fileInput">Загрузить фото</label><input id="fileInput" type="file" accept="image/jpeg,image/png,image/webp" hidden></div>
+          <div id="dropzone" class="image-stage" tabindex="0" role="button" aria-label="Загрузить изображение платы перетаскиванием или нажатием Enter">
+            <div id="emptyState" class="empty-state"><span class="upload-symbol" aria-hidden="true">＋</span><h3>Перетащите снимок сюда</h3><p>Или загрузите файл с компьютера.<br>Для первого знакомства подойдёт пример ниже.</p><button class="button primary" id="emptyUpload">Выбрать изображение</button></div>
+            <canvas id="boardCanvas" hidden aria-label="Изображение платы с рамками найденных дефектов"></canvas>
+            <div id="busyOverlay" class="busy-overlay" hidden><span class="spinner"></span><strong>Совмещаем снимки и ищем отличия</strong><span>Обработка выполняется на этом компьютере</span></div>
+          </div>
+          <div class="canvas-toolbar"><label><input type="checkbox" id="showBoxes" checked> Показывать рамки</label><button class="text-button" id="manualBox" disabled>＋ Отметить дефект</button><button class="text-button" id="downloadImage" disabled>Скачать снимок</button></div>
+          <div class="comparison-toolbar"><label for="viewMode">Вид</label><select id="viewMode"><option value="inspection">Проверяемая плата</option><option value="aligned">Совмещённый эталон</option><option value="heatmap">Карта отличий</option><option value="blend">Наложение 50/50</option></select><button class="text-button" id="selectRoi" disabled>Выбрать область</button><button class="text-button" id="resetRoi" disabled>Вся плата</button><span id="roiLabel">Область: весь снимок</span></div>
+          <div id="manualHelp" class="manual-help" hidden><label for="manualClass">Тип дефекта</label><select id="manualClass"></select><span>Протяните рамку на снимке. Esc — отменить.</span><button class="text-button" id="cancelManual">Отмена</button></div>
+          <div class="samples-bar"><span>Демонстрационная пара</span><select id="sampleSelect" aria-label="Пример пары"><option value="">Загрузка списка…</option></select><button class="button secondary small" id="loadSample">Открыть пару</button></div>
+        </div>
+        <aside class="control-panel panel">
+          <div class="panel-heading"><div><h2>Параметры проверки</h2><p>Визуальные отличия от эталона</p></div><span class="status-pill" id="modelPill">Ожидание</span></div>
+          <div class="control-body">
+            <label class="field-label" for="boardId">Номер платы или заказа</label><input id="boardId" type="text" value="PCB-001" maxlength="80" autocomplete="off">
+            <div class="range-label"><label class="field-label" for="threshold">Порог различий</label><output id="thresholdValue">0,40</output></div>
+            <input id="threshold" type="range" min="10" max="90" step="5" value="40">
+            <p class="field-help">Ниже порог — больше выделенных отличий. Индекс различия не является вероятностью дефекта.</p>
+            <label class="field-label min-area-label" for="minArea">Минимальная площадь, px²</label><input id="minArea" type="number" min="8" max="10000" step="1" value="40">
+            <button class="button primary analyze-button" id="analyze" disabled>Запустить анализ</button>
+            <div class="model-details"><span class="model-dot"></span><div><strong id="modelName">Сравнение с эталоном</strong><span>Совмещение и карта отличий · CPU</span><a id="modelSource" href="https://docs.opencv.org/4.x/d1/de0/tutorial_py_feature_homography.html" target="_blank" rel="noreferrer">Метод совмещения ↗</a></div></div>
+          </div>
+          <section class="result-block" id="resultBlock"><p class="eyebrow">РЕЗУЛЬТАТ ОСМОТРА</p><h3 id="verdict">Ожидает снимок</h3><p id="verdictDescription">Добавьте фото платы, чтобы начать проверку.</p><div id="machineResult" class="machine-result" hidden></div></section>
+          <div class="quality-block" id="qualityBlock" hidden><strong>Качество сравнения</strong><p id="qualityInfo"></p><ul id="qualityWarnings"></ul></div>
+          <div class="signoff"><label><input type="checkbox" id="masterConfirm" disabled><span>Я проверил снимок, все находки и непроверенные зоны</span></label><p>Окончательное решение принимает мастер. PASS относится только к видимым дефектам.</p></div>
+        </aside>
+      </section>
+      <section class="findings panel">
+        <div class="panel-heading"><div><h2>Найденные участки <span class="inline-count" id="findingsCount">0</span></h2><p id="findingsHint">Здесь появятся тип, оценка модели и координаты каждой находки</p></div><div class="filter-group" role="group" aria-label="Фильтр находок"><button class="filter active" data-filter="all">Все</button><button class="filter" data-filter="pending">Не проверены</button><button class="filter" data-filter="confirmed">Подтверждены</button></div></div>
+        <div class="table-scroll"><table><thead><tr><th>№</th><th>Тип находки</th><th>Индекс отличия</th><th>Координаты, px</th><th>Решение мастера</th></tr></thead><tbody id="findingsBody"><tr><td colspan="5" class="table-empty">Загрузите эталон и снимок, затем запустите сравнение</td></tr></tbody></table></div>
+      </section>
+      <section class="report-panel panel"><div><h2>Отчёт по осмотру</h2><p>Результат, снимок и решения мастера сохраняются вместе.</p></div><label class="notes-field"><span>Комментарий мастера</span><textarea id="notes" rows="2" placeholder="Что нужно перепроверить или передать в ремонт" maxlength="2000"></textarea></label><p class="print-notes" id="printNotes"></p><div class="report-actions"><button class="button primary" id="saveHistory" disabled>Сохранить осмотр</button><button class="button secondary" id="exportJson" disabled>Скачать JSON</button><button class="button secondary" id="printReport" disabled>Печать / PDF</button></div></section>
+      <p class="scope-note">Сравнение показывает визуальные отличия на плате с компонентами. Автоматически найденные участки не классифицируются как конкретные дефекты: диагноз подтверждает мастер. Разная комплектация, свет, блики и высота компонентов могут давать ложные отличия. PASS относится только к выбранной области и подтверждённому визуальному осмотру. Электрическая исправность и скрытая пайка не оцениваются.</p>
+    </div>
+    <section id="historyView" class="panel history-panel" hidden><div class="panel-heading"><div><h2>Сохранённые осмотры</h2><p>Последние 20 записей в этом браузере. JSON нужен для переноса и архива.</p></div><div class="history-actions"><label class="button secondary small" for="importHistory">Импорт JSON</label><input id="importHistory" type="file" accept="application/json,.json" hidden><button class="button secondary small" id="clearHistory">Очистить историю</button></div></div><div id="historyList"></div></section>
+    <footer>PCB Inspector <span>Локальный прототип для проектной деятельности</span></footer>
+  </main>
+  <dialog id="clearDialog"><h2>Очистить историю?</h2><p>Сохранённые в браузере осмотры будут удалены. Скачанные отчёты сохранятся.</p><div class="dialog-actions"><button class="button secondary" id="cancelClear">Отмена</button><button class="button primary" id="confirmClear">Очистить</button></div></dialog>
+</body>
+</html>

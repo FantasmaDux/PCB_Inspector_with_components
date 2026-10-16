@@ -1,0 +1,13 @@
+{
+  "name": "PCBA Reference Comparison",
+  "version": "2.0.0",
+  "max_side": 1600,
+  "default_threshold": 0.4,
+  "min_area": 40,
+  "min_inliers": 18,
+  "min_inlier_ratio": 0.45,
+  "min_feature_coverage": 0.06,
+  "min_coverage_for_pass": 0.92,
+  "max_changed_fraction": 0.18,
+  "max_regions": 60
+}
